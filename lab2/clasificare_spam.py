@@ -1,19 +1,22 @@
 import re
+import nltk
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 
-# 1. Set mic de exemple pentru antrenare (SPAM vs. LEGITIM)
+nltk.download("stopwords", quiet=True)
+
+# 1. Set de exemple pentru antrenare (SPAM vs. LEGITIM)
 texte_antrenare = [
-    "Felicitari! Ai castigat un premiu gratuit, apasa acum pe link!",
-    "Oferta speciala gratuita doar astazi, revendica premiul tau!",
-    "Castiga bani rapid fara efort, intra pe linkul de mai jos!",
-    "Contul tau va fi blocat, confirma parola urgent pe link!",
-    "Salut, trimit atasat raportul pentru sedinta de maine.",
-    "Te rog sa verifici documentul atasat si sa imi confirmi.",
-    "Ne vedem la ora 10 in sala de seminar pentru laborator.",
-    "Am actualizat notitele de curs si le-am urcat in folder."
+    "Felicitări! Ai câștigat un premiu gratuit, apasă acum pe link!",
+    "Ofertă specială gratuită doar astăzi, revendică premiul tău!",
+    "Câștigă bani rapid fără efort, intră pe linkul de mai jos!",
+    "Contul tău va fi blocat, confirmă parola urgent pe link!",
+    "Salut, trimit atașat raportul pentru ședința de mâine.",
+    "Te rog să verifici documentul atașat și să îmi confirmi.",
+    "Ne vedem la ora 10 în sala de seminar pentru laborator.",
+    "Am actualizat notițele de curs și le-am urcat în folder.",
 ]
 
 etichete_antrenare = [
@@ -24,35 +27,44 @@ etichete_antrenare = [
     "LEGITIM",
     "LEGITIM",
     "LEGITIM",
-    "LEGITIM"
+    "LEGITIM",
 ]
 
-# 2. Functie de curatare in romana (aceeasi idee ca in Laboratorul 1)
-cuvinte_legatura = set(stopwords.words("romanian"))
+negatii = {"nu", "nici", "fara", "fără"}
+cuvinte_legatura = set(stopwords.words("romanian")) - negatii
 
-def preproceseaza_text(text):
-    text = text.lower()
-    tokeni = re.findall(r"\b\w+\b", text)
-    tokeni_curati = [
-        t for t in tokeni if not t.isdigit() and t not in cuvinte_legatura
-    ]
+
+def normalizeaza_diacritice(text: str) -> str:
+    return (
+        text.replace("ş", "ș")
+        .replace("ţ", "ț")
+        .replace("Ş", "Ș")
+        .replace("Ţ", "Ț")
+    )
+
+
+def preproceseaza_text(text: str) -> str:
+    text = normalizeaza_diacritice(text).lower()
+    tokeni = re.findall(r"\b[a-zăâîșț]+\b", text)
+    tokeni_curati = [t for t in tokeni if t not in cuvinte_legatura]
     return " ".join(tokeni_curati)
+
 
 texte_curate = [preproceseaza_text(t) for t in texte_antrenare]
 
-# 3. Construim si antrenam pipeline-ul TF-IDF + Naive Bayes
+# 2. Construim si antrenam pipeline-ul TF-IDF + Naive Bayes
 model = Pipeline([
-    ("tfidf", TfidfVectorizer()),
-    ("clf", MultinomialNB())
+    ("tfidf", TfidfVectorizer(ngram_range=(1, 2))),
+    ("clf", MultinomialNB(alpha=0.5)),
 ])
 
 model.fit(texte_curate, etichete_antrenare)
 
-# 4. Testam pe mesaje noi, nevazute la antrenare
+# 3. Testam pe mesaje noi, nevazute la antrenare
 mesaje_noi = [
-    "Ai castigat un telefon gratuit, apasa pe link acum!",
-    "Salut, poti sa imi trimiti raportul de la laborator?",
-    "Premiu special disponibil astazi, revendica rapid!"
+    "Ai câștigat un telefon gratuit, apasă pe link acum!",
+    "Salut, poți să îmi trimiți raportul de la laborator?",
+    "Premiu special disponibil astăzi, revendică rapid!",
 ]
 
 mesaje_noi_curate = [preproceseaza_text(m) for m in mesaje_noi]

@@ -1,42 +1,58 @@
 import re
+import nltk
 from nltk.corpus import stopwords
+from nltk.stem.snowball import SnowballStemmer
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
-# 1. Un mic set de texte (exemplu: mesaje / e-mailuri scurte)
+nltk.download("stopwords", quiet=True)
+
+# 1. Set de texte demonstrative in limba romana (inclusiv diacritice)
 documente = [
-    "Felicitari! Ai castigat un premiu gratuit, apasa acum pe link!",
-    "Salut, trimit atasat raportul pentru sedinta de maine.",
-    "Oferta speciala gratuita doar astazi, revendica premiul tau!",
-    "Te rog sa verifici documentul atasat si sa imi confirmi."
+    "Felicitări! Ai câștigat un premiu gratuit, apasă acum pe link!",
+    "Salut, trimit atașat raportul pentru ședința de mâine.",
+    "Ofertă specială gratuită doar astăzi, revendică premiul tău!",
+    "Te rog să verifici documentul atașat și să nu îl ignori.",
 ]
 
-# 2. Lista de cuvinte de legatura (stopwords) in romana
-cuvinte_legatura = set(stopwords.words("romanian"))
+# 2. Resurse lingvistice pentru limba romana (pastram negatiile importante)
+negatii = {"nu", "nici", "fara", "fără"}
+cuvinte_legatura = set(stopwords.words("romanian")) - negatii
+stemmer_ro = SnowballStemmer("romanian")
 
-def curata_text(text):
-    # Transformam in litere mici
-    text = text.lower()
-    # Extragem doar cuvintele (fara punctuatie)
-    tokeni = re.findall(r"\b\w+\b", text)
-    # Pastram doar cuvintele care nu sunt cifre si nu sunt cuvinte de legatura
-    tokeni_curati = [
-        t for t in tokeni if not t.isdigit() and t not in cuvinte_legatura
-    ]
+
+def normalizeaza_diacritice(text: str) -> str:
+    return (
+        text.replace("ş", "ș")
+        .replace("ţ", "ț")
+        .replace("Ş", "Ș")
+        .replace("Ţ", "Ț")
+    )
+
+
+def curata_text(text: str, aplica_stemming: bool = True) -> str:
+    text = normalizeaza_diacritice(text).lower()
+    tokeni = re.findall(r"\b[a-zăâîșț]+\b", text)
+    tokeni_curati = [t for t in tokeni if t not in cuvinte_legatura]
+    if aplica_stemming:
+        tokeni_curati = [stemmer_ro.stem(t) for t in tokeni_curati]
     return " ".join(tokeni_curati)
 
-# Aplicam curatarea pe fiecare document
+
 documente_curate = [curata_text(doc) for doc in documente]
 
-print("=== TEXTE CURATATE ===")
+print("=== TEXTE CURATATE SI NORMALIZATE (RO) ===")
 for i, doc in enumerate(documente_curate, start=1):
     print(f"Doc {i}: {doc}")
 
-# 3. Transformam textele in numere folosind TF-IDF
+# 3. Reprezentare Bag-of-Words si TF-IDF
+bow = CountVectorizer()
+matrice_bow = bow.fit_transform(documente_curate)
+
 vectorizator = TfidfVectorizer()
 matrice_tfidf = vectorizator.fit_transform(documente_curate)
 
 print("\n=== VOCABULAR (CUVINTELE INVATATE) ===")
 print(vectorizator.get_feature_names_out())
 
-print("\n=== DIMENSIUNEA MATRICEI NUMERICE (documente x cuvinte) ===")
-print(matrice_tfidf.shape)
+print("\n=== DIMENSIUNI MATRICE (documente x termeni) ===")
+print(f"BoW: {matrice_bow.shape} | TF-IDF: {matrice_tfidf.shape}")
