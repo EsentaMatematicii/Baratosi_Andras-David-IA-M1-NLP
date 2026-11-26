@@ -1,0 +1,8 @@
+Model,Config,Val_F1_macro,Timp_s
+Model 1 (LogReg + ADAS),C=0.25,1.0,0.0343
+Model 1 (LogReg + ADAS),C=1.0,1.0,0.0288
+Model 1 (LogReg + ADAS),C=4.0,1.0,0.0292
+Model 1 (LogReg + ADAS),C=10.0,1.0,0.0296
+Model 2 (Neural MLP + ES),"hidden=32, alpha=0.001",0.4649 ± 0.2112,0.1533
+Model 2 (Neural MLP + ES),"hidden=64, alpha=0.001",0.5847 ± 0.1033,0.2307
+Model 2 (Neural MLP + ES),"hidden=128, alpha=0.01",0.9026 ± 0.0090,0.6196

@@ -1,0 +1,3 @@
+Model,Test_Accuracy,Test_F1_macro,Recall_COMANDA_ADAS
+Model 1: LogReg + ADAS Features (C=0.25),1.0,1.0000,1.0
+Model 2: Neural MLP + EarlyStopping (h=128),0.5455,0.5369 ± 0.0590,0.5

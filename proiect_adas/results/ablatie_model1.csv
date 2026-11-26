@@ -1,0 +1,5 @@
+Configuratie,Val_Accuracy,Val_F1_macro
+"M1 Baseline (doar word TF-IDF, fara stemming/abrevieri)",0.3636,0.3111
+M1 + Preprocesare ADAS (abrevieri + stemming RO),0.6364,0.6349
+"M1 + Char n-grams (3,5) pentru flexiuni RO",0.7273,0.7302
+M1 Complet (+ Trasaturi domeniu ADAS),1.0,1.0
